@@ -30,8 +30,9 @@ class Neo4jConnection:
         return response
 
 conn = Neo4jConnection(uri="bolt://localhost:7687", user="daniel14gc", pwd="Guepardo14")
-print(conn)
-query = 'MATCH (pl:Pelo {pelo:"Peludo"})<-[:TipoPelo]-(p:Perro) return p'
-temp =conn.query(query, db ='neo4j')
 
+query = 'MATCH (pl:Pelo {pelo:"Peludo"})<-[:TipoPelo]-(p:Perro) return p.raza'
+temp =conn.query(query, db ='neo4j')
 print(temp)
+for nodo in temp:
+    print(nodo['p.raza'])
