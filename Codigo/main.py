@@ -1,5 +1,6 @@
 from neo4j import GraphDatabase
 from connection import *
+import random
 
 #Funcion que permite agregar a la base de datos
 def agregar(connection, db):
@@ -48,12 +49,8 @@ def quitar(connection, db):
             print("Ingresar unicamente números")
         
 
-def query_ranking(conn,db, comportamiento):
+def query_ranking(query_result):
     perros = {}
-    #Query para encontrar ranking de perros segun la caracteristica de comportamiento
-    query ='''
-            MATCH (p:Perro)-[:Comportamiento]->(p1:Comportamiento{comportamiento:"%s"}) return p.raza, p.ranking'''%(comportamiento)
-    query_result = conn.query(query, db)
     #Se almacena en un diccionario cada raza encontrada con su ranking
     for element in query_result:
         perros[element['p.raza']] = int(element['p.ranking'])
@@ -69,7 +66,6 @@ def query_ranking(conn,db, comportamiento):
     '''%(first_key, first_value)
     return first_key
 
-
 def elementos(connection, db, tipo):
     diferenciador = tipo[0:1].lower() + "" + tipo[1:len(tipo)]
     query = f'MATCH (p:{tipo}) return p.{diferenciador}'
@@ -80,6 +76,7 @@ def elementos(connection, db, tipo):
         dictionary[i] = elements[f'p.{diferenciador}']
         i = i+1
     return dictionary
+
 
 def eleccion(dic):
     bandera=True
@@ -98,8 +95,19 @@ def eleccion(dic):
                 bandera=False
         except ValueError:
             print("Porfavor ingrese la opción en formato de numero")
-        
-    
+
+def aumentar_ranking(raza):
+    query ='''
+            MATCH (p:Perro{raza:"%s"}) return p.ranking'''%(raza)
+    #result = 
+
+def resultado(query):
+    perros = []
+    for elements in query:
+        perros.append(elements['p.raza'])
+
+    i = random.randint(0,len(perros)-1)
+    return perros[i]
     
 
 def ConsultaUsuario(connection, db):
@@ -112,7 +120,7 @@ def ConsultaUsuario(connection, db):
         dictionary = elementos(connection, db, keys)
         elec = eleccion(dictionary)
         datos[keys] = elec
-    
+    recomendacion = ""
     query ='''
             MATCH (p:Perro)-[:Comportamiento]->(p1:Comportamiento{comportamiento:"%s"}),
             (p)-[:Espacio]-> (p4:Espacio{espacio:"%s"}),
@@ -122,18 +130,26 @@ def ConsultaUsuario(connection, db):
             (p)-[:ActividadFisica]-> (p8:ActividadFisica{actividadFisica:"%s"}),
             (p)-[:ExpectativaDeVida]-> (p9:ExpectativaDeVida{expectativaDeVida:"%s"}),
             (p)-[:Hocico]-> (p10:Hocico{hocico:"%s"}),
-            (p)-[:Orejas]-> (p11:Orejas{orejas:"%s"}) return p.raza
+            (p)-[:Orejas]-> (p11:Orejas{orejas:"%s"}) return p.raza, p.ranking
            '''%(datos['Comportamiento'],datos['Espacio'],datos['TipoPelo'],datos['Tamano'],datos['ComplexionCorporal'],datos['ActividadFisica'],datos['ExpectativaDeVida'],datos['Hocico'], datos['Orejas'])
     query_result = connection.query(query, db)
-    if not query_result:
+    if query_result:
+        recomednacion = query_ranking(query_result)
+    elif not query_result:
         query ='''MATCH (p:Perro)-[:Comportamiento]->(p5:Comportamiento{comportamiento:"%s"}),
             (p)-[:Espacio]-> (p2:Espacio{espacio:"%s"}),
-            (p)-[:Tamano]-> (p3:Tamano{tamano:"%s"}) return p.raza
+            (p)-[:Tamano]-> (p3:Tamano{tamano:"%s"}) return p.raza, p.ranking
             '''%(datos['Comportamiento'],datos['Espacio'],datos['Tamano'])
         query_result = connection.query(query, db)
-    if not query_result:
-        query_ranking(connection, db, datos['Comportamiento'])
-       
+    if query_result:
+        recomendacion = query_ranking(query_result)
+    elif not query_result:
+        query ='''MATCH (p:Perro)-[:Comportamiento]->(p5:Comportamiento{comportamiento:"%s"})  return p.raza, p.ranking
+            '''%(datos['Comportamiento'])
+        query_result = connection.query(query, db)
+        recomendacion = query_ranking(query_result)
+    
+    return recomendacion
 
 
 
@@ -144,6 +160,24 @@ db = 'neo4j'
 #print(temp)
 
 #-----------------------Inicio del menu--------------------------------
+print("¡Bienvenidos al sistema de recomendación de perros!")
+perro = '''
+░░░░░░▄█▄█░░░░░▄░░░░░░
+░░░░██████░░░░░░█░░░░░
+░░░░░░███████████░░░░░
+▒▒▒▒▒▒█▀▀█▀▀██▀██▒▒▒▒▒
+▒▒▒▒▒▄█▒▄█▒▒▄█▒▄█▒▒▒▒▒
+'''
+print(perro)
+
+perro = '''
+    ___
+ __/_  `.  .-"""-.
+ \_,` | \-'  /   )`-')
+  "") `"`    \  ((`"`
+ ___Y  ,    .'7 /|
+(_,___/...-` (_/_/ 
+'''
 
 continuar=True
 while(continuar):
@@ -159,8 +193,9 @@ while(continuar):
         print("Opcion no valida")
 
     if op1==1:
-        ConsultaUsuario(conn, db)
-        print("Usted a seleccionado la primera opcion")
+        RecomendacionExitosa=ConsultaUsuario(conn, db)
+        print(f"Se le recomienda conseguir un perro de raza: {RecomendacionExitosa}")
+        print(perro)
     elif op1==2:#Agregar a la base de datos
         agregar(conn,db)
     elif op1==3:#Quitar de la base de datos
