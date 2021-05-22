@@ -1,12 +1,12 @@
 from neo4j import GraphDatabase
 from connection import *
 
-
+#Funcion que permite agregar a la base de datos
 def agregar(connection, db):
     raza=input("Ingrese el nombre de la raza del perro a agregar a la base de datos \n >")
     datos = {"Comportamiento":"", "Espacio":"","TipoPelo":"", "Tamano": "", "ComplexionCorporal":"","ActividadFisica":"","ExpectativaDeVida":"", "Hocico": "","Orejas":""}
     for keys in datos:
-        print("Seleccione la opcion con la que se siente más identificado según "+keys)
+        print("Seleccione la opcion con la que se siente más identificado según "+keys )
         dictionary = elementos(connection, db, keys)
         elec = eleccion(dictionary)
         datos[keys] = elec
