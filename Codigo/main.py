@@ -5,7 +5,14 @@ import random
 
 añesartnoc="Computologo"
 
-#Funcion que permite agregar a la base de datos
+"""
+--------------------Terminos Y Condiciones--------------------
+Para que el proceso de recomendacion se pueda llevar a cabo,
+el usuario debe estar de acuerdo con ello y aceptar los
+terminos y condiciones de la misma. Para ello se inicia
+preguntandole al usuario si las acepta o no
+--------------------------------------------------------------
+"""
 def TerminosYCondiciones():
     respuesta=""
     while respuesta=="":
@@ -26,22 +33,37 @@ def TerminosYCondiciones():
             respuesta=""
 
 
+
+"""
+---------------------    agregar     -------------------------
+Con el fin de mejorar el sistema de recomendacion, se diseno
+una opcion para agregar mas componentes al grafo. En esta opcion
+el usuario ingresa (raza, comportamiento, espacio, tipo de pelo,
+tamano, complexion corporal, actividad fisica, expectativa de vida,
+hocico y orejas)
+--------------------------------------------------------------
+"""
 def agregar(connection, db):
+    #Se le solicita al usuario que ingrese una contrasena
     palabra=input("Por favor ingrese la palabra clave \n")
     if palabra == añesartnoc:
-
+        # Se le solicita al usuario que ingrese la raza y las caracteristicas del nuevo perro
         raza=input("Ingrese el nombre de la raza del perro a agregar a la base de datos \n >")
         datos = {"Comportamiento":"", "Espacio":"","TipoPelo":"", "Tamano": "", "ComplexionCorporal":"","ActividadFisica":"","ExpectativaDeVida":"", "Hocico": "","Orejas":""}
+        # El ciclo FOR recorre el diccionario datos y guarda la informacion que el usuario ingrese.
         for keys in datos:
             print("Seleccione la opcion con la que se siente más identificado según "+keys )
             dictionary = elementos(connection, db, keys)
             elec = eleccion(dictionary)
             datos[keys] = elec
+        # Se le asigna un ranking de 0 porque al ser un dato nuevo, no se le ha recomendado a nadie
         datos["Ranking"]=0
+        # Se envia el primer query para crear un perro
         query = '''
             CREATE (p:Perro{raza:"%s", ranking:'0'})
         '''%(raza)
         connection.query(query, db)
+        # Se envia otro query uniendo al perro con sus caracteristicas. Se envia en estructura del codigo de cypher para que la plataforma entienda el query.
         query='''MATCH (p:Perro) WHERE p.raza = '%s'
                 MATCH (p1:Comportamiento) WHERE p1.comportamiento = '%s' 
                 MERGE (p) -[:Comportamiento]-> (p1) WITH p
@@ -64,9 +86,19 @@ def agregar(connection, db):
             '''%(raza,datos['Comportamiento'],datos['Espacio'],datos['TipoPelo'],datos['Tamano'],datos['ComplexionCorporal'],datos['ActividadFisica'],datos['ExpectativaDeVida'],datos['Hocico'], datos['Orejas'])
         connection.query(query, db)
     else:
+        #Si la contrasena es incorrecta se le indica al usuario
         print("Palabra clave incorrecta, Esta opción es unicamente para personal calificado")
 
+
+"""
+---------------------    quitar     --------------------------
+Asi como se puede anadir un componente tambien se puede eliminar,
+para esto se diseno una herramienta para eliminar comparando el nombre
+que se ingreso con las razas almacenadas.
+--------------------------------------------------------------
+"""
 def quitar(connection, db):
+    #Se le solicita al usuario que ingrese una contrasena
     palabra=input("Por favor ingrese la palabra clave\n")
     if palabra == añesartnoc:
         condicion=True
@@ -74,6 +106,7 @@ def quitar(connection, db):
         temp = connection.query(query, db)
         i = 1
         dictionary = {}
+        # Se hace un ciclo while para imprimir todos los perros del grafo y luego devolver el perro que el usuario haya ingresado
         while condicion:
             for elements in temp:
                 dictionary[i] = elements['n.raza']
@@ -87,13 +120,21 @@ def quitar(connection, db):
                     temp = connection.query(query, db)
                     condicion=False
                 else:
+                    #En caso que no se encuentre la raza, se le notifica al usuario
                     print("La opcion ingresada no existe")
             except:
+                #En caso que no haya ingresado un numero, se le notifica al usuario
                 print("Ingresar unicamente números")
     else:
+        # En caso que haya ingresado una contrasena incorrecta se le notifica al usuario
         print("Palabra clave incorrecta, Esta opción es unicamente para personal calificado")
         
 
+"""
+-----------------    query ranking     -----------------------
+Esta Funcion devuelve el perro con mayor ranking del grafo.
+--------------------------------------------------------------
+"""
 def query_ranking(connection, query_result):
     perros = {}
     #Se almacena en un diccionario cada raza encontrada con su ranking
@@ -115,18 +156,33 @@ def query_ranking(connection, query_result):
     connection.query(query, db)
     return first_key
 
+
+"""
+-------------------    elementos     -------------------------
+Esta Funcion devuelve un diccionario con los elementos segun
+el tipo y el diferenciador que el usuario ingrese
+--------------------------------------------------------------
+"""
 def elementos(connection, db, tipo):
     diferenciador = tipo[0:1].lower() + "" + tipo[1:len(tipo)]
+    # Se envia el query a neo4j con los datos que ingreso el usuario
     query = f'MATCH (p:{tipo}) return p.{diferenciador}'
     temp = connection.query(query, db)
     i = 1
     dictionary = {}
+    # Por cada elemento recibido, se agrega un valor al diccionario.
     for elements in temp:
         dictionary[i] = elements[f'p.{diferenciador}']
         i = i+1
     return dictionary
 
 
+"""
+-------------------    eleccion     --------------------------
+Esta Funcion imprime el nodo con el que el usuario indico que
+se identifico.
+--------------------------------------------------------------
+"""
 def eleccion(dic):
     bandera=True
     while bandera:
@@ -145,11 +201,26 @@ def eleccion(dic):
         except ValueError:
             print("Porfavor ingrese la opción en formato de numero")
 
+
+
+"""
+---------------    aumentar ranking     ----------------------
+Esta Funcion aumenta el ranking del perro recomendado cada vez
+que se muestra al usuario.
+--------------------------------------------------------------
+"""
 def aumentar_ranking(raza):
     query ='''
             MATCH (p:Perro{raza:"%s"}) return p.ranking'''%(raza)
     #result = 
 
+
+"""
+-------------------    resultado     -------------------------
+Esta Funcion muestra al usuario el resultado obtenido por
+la busqueda.
+--------------------------------------------------------------
+"""
 def resultado(query):
     perros = []
     for elements in query:
@@ -159,17 +230,23 @@ def resultado(query):
     return perros[i]
     
 
+"""
+----------------    ConsultaUsuario     ----------------------
+Esta Funcion solicita al usuario las caracteristicas que 
+desea que el su perro tenga, en base a esto se hace un query a
+la base de datos de Neo4J y se le da una respuesta.
+--------------------------------------------------------------
+"""
 def ConsultaUsuario(connection, db):
     datos = {"Comportamiento":"", "Espacio":"","TipoPelo":"", "Tamano": "", "ComplexionCorporal":"","ActividadFisica":"","ExpectativaDeVida":"", "Hocico": "","Orejas":""}
-    #TipoPelo
-    #Complexion
-
+    # Se solicita al usuario la opcion que desee segun la caracteristica
     for keys in datos:
         print("Seleccione la opcion con la que se siente más identificado según "+keys)
         dictionary = elementos(connection, db, keys)
         elec = eleccion(dictionary)
         datos[keys] = elec
     recomendacion = ""
+    # Se le envia a la base de datos el query con las caracteristicas que selecciono el usuario
     query ='''
             MATCH (p:Perro)-[:Comportamiento]->(p1:Comportamiento{comportamiento:"%s"}),
             (p)-[:Espacio]-> (p4:Espacio{espacio:"%s"}),
@@ -182,8 +259,10 @@ def ConsultaUsuario(connection, db):
             (p)-[:Orejas]-> (p11:Orejas{orejas:"%s"}) return p.raza, p.ranking
            '''%(datos['Comportamiento'],datos['Espacio'],datos['TipoPelo'],datos['Tamano'],datos['ComplexionCorporal'],datos['ActividadFisica'],datos['ExpectativaDeVida'],datos['Hocico'], datos['Orejas'])
     query_result = connection.query(query, db)
+    #Si se encuentra entonces se muestra al usuario.
     if query_result:
         recomendacion = query_ranking(connection, query_result)
+    #En caso que no se encuentren, entonces se realiza un query con menos opciones
     elif not query_result:
         query ='''MATCH (p:Perro)-[:Comportamiento]->(p5:Comportamiento{comportamiento:"%s"}),
             (p)-[:Espacio]-> (p2:Espacio{espacio:"%s"}),
@@ -192,6 +271,7 @@ def ConsultaUsuario(connection, db):
         query_result = connection.query(query, db)
         if query_result:
             recomendacion = query_ranking(connection, query_result)
+        #En caso que no se encuentre de nuevo, se vuelve a hacer un query solo con el comportamiento.
         elif not query_result:
             query ='''MATCH (p:Perro)-[:Comportamiento]->(p5:Comportamiento{comportamiento:"%s"})  return p.raza, p.ranking
                 '''%(datos['Comportamiento'])
