@@ -152,8 +152,6 @@ def query_ranking(connection, query_result):
     sort_dict = dict(sorted(perros.items(), key=lambda item: item[1], reverse=True))
     first_key = list(sort_dict.keys())[0]
     first_value = list(sort_dict.values())[0]
-    print(first_key, first_value)
-    print(TYC)
     if TYC:
         first_value = first_value + 1
     query = '''
