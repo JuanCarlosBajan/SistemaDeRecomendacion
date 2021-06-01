@@ -1,3 +1,9 @@
+"""
+Autores: Sebastian Aristondo, Daniel Gonzalez, Juan Carlos Bajan.
+Modificacion: 31/05/2021
+Descripcion: Programa que permite realizar una recomendacion de perros.
+"""
+
 from neo4j import GraphDatabase
 from connection import *
 import random
@@ -283,7 +289,7 @@ def ConsultaUsuario(connection, db):
 
 
 #Conexiones a base de datos.
-conn = Neo4jConnection(uri="bolt://localhost:7687", user="daniel14gc", pwd="Guepardo14")
+conn = Neo4jConnection(uri="bolt://localhost:####", user="neo4j", pwd="1234")
 db = 'neo4j'
 #temp = elementos(conn, db, "Personalidad", "Personalidad")
 #print(temp)
